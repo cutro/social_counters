@@ -1,0 +1,2 @@
+release only with admin part of plugin 
+var:alpha 0.6
