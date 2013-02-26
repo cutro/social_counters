@@ -502,4 +502,7 @@ return $fc;
          return md5($params.$secret_key);
         }
 
+function SF_widget() {
+  print "вывод виджета социальщины";
+}
 ?>
