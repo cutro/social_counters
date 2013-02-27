@@ -13,6 +13,16 @@ function create_menu(){
 
 function soc_cPageOptions()
 {
+if ($_REQUEST['update_counters']) {
+  sf_do_this_hourly();
+}
+
+
+if ($_REQUEST['save_wp']) {
+    if ($_POST["wppost_show"]) {  set_opt('wppost_show','true');  } else {set_opt('wppost_show','false');}
+    if ($_POST["wpcomment_show"]) {  set_opt('wpcomment_show','true');  } else {set_opt('wpcomment_show','false');}
+}
+
 
 if ($_REQUEST['save_twitter']) {
     set_opt('twitter_login',$_POST["twitter_login"]);
@@ -104,6 +114,10 @@ $out_mymail_Secret = get_opt('mymail_Secret');
 $out_mymail_tokenLink = "https://connect.mail.ru/oauth/authorize?client_id=".$out_mymail_id."&response_type=code&scope=stream&redirect_uri=".$out_rediretBackMymail;
 if (get_opt('mymail_show') == "true") {$out_mymail_active = " checked ";};
 //
+////////////////////
+if (get_opt('wppost_show') == "true") {$out_wppost_active = " checked ";};
+if (get_opt('wpcomment_show') == "true") {$out_wpcomment_active = " checked ";};
+////////////////////
 
 
 ?>
@@ -281,7 +295,26 @@ $html_out = <<<EOD
 <tr valign="top"><td><input type="submit" name="save_mymail" id="submit" class="button button-primary" value="Сохранить изменения"></td></tr>
 </form>
 
+
+<form method="post" action="" enctype="multipart/form-data">
+<tr valign="top"><td><h2>Wordpress</h2></td></tr>
+<tr valign="top">
+<th scope="row">Настройки</th>
+<td> <fieldset><legend class="screen-reader-text"><span></span></legend><label for="wppost_show">
+<input name="wppost_show" type="checkbox" id="wppost_show" $out_wppost_active />
+Счетчик постов</label><br/>
+<legend class="screen-reader-text"><span></span></legend><label for="wpcomment_show">
+<input name="wpcomment_show" type="checkbox" id="wpcomment_show" $out_wpcomment_active />
+Счетчик комментов</label>
+</fieldset></td>
+
+</tr>
+<tr valign="top"><td><input type="submit" name="save_wp" id="submit" class="button button-primary" value="Сохранить изменения"></td></tr>
+</form>
 </tbody></table>
+<form method="post" action="" enctype="multipart/form-data" style="margin-top:50px;">
+<input type="submit" name="update_counters" id="submit" class="button" value="обонвить показатели">
+</form>
 </div>
 EOD;
 echo $html_out;
@@ -343,6 +376,10 @@ function install(){
     $wpdb->query("INSERT INTO `".$wpdb->prefix."socialfollowers` VALUES('','mymail_refresh_token','')");
     $wpdb->query("INSERT INTO `".$wpdb->prefix."socialfollowers` VALUES('','mymail_last_count','')");
     $wpdb->query("INSERT INTO `".$wpdb->prefix."socialfollowers` VALUES('','mymail_show','false')");
+
+    $wpdb->query("INSERT INTO `".$wpdb->prefix."socialfollowers` VALUES('','wppost_show','false')");
+    $wpdb->query("INSERT INTO `".$wpdb->prefix."socialfollowers` VALUES('','wpcomment_show','false')");
+
 
     $wpdb->query("INSERT INTO `".$wpdb->prefix."socialfollowers` VALUES('','refresh_time','24')");
 }
@@ -502,7 +539,31 @@ return $fc;
          return md5($params.$secret_key);
         }
 
-function SF_widget() {
-  print "вывод виджета социальщины";
-}
+ function get_totalposts() {  
+    global $wpdb;  
+    $totalposts = intval($wpdb->get_var("SELECT COUNT(ID) FROM $wpdb->posts WHERE post_type = 'post' AND post_status = 'publish'"));  
+  
+    return $totalposts;  
+}  
+
+function get_totalcomments() {  
+    global $wpdb;  
+    $totalcomments = intval($wpdb->get_var("SELECT COUNT(comment_ID) FROM $wpdb->comments WHERE comment_approved = '1'"));  
+  
+    return $totalcomments;  
+} 
+
+function ping($url) {
+$ch = curl_init();
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+      curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+      curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.3) Gecko/2008092417 Firefox/3.0.3');
+      curl_setopt($ch, CURLOPT_URL, $url);
+      $xml = curl_exec($ch);
+      $info = curl_getinfo($ch);
+      curl_close($ch);
+     if ($info['http_code']==200) { return 'live';} else {return 'offline';}
+  }
+
 ?>
